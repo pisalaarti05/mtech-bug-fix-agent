@@ -1,0 +1,202 @@
+# MTech Project and Research Plan
+
+## 1. Purpose
+
+This plan is the working guide for implementing the MTech project, evaluating it as a research study, updating the final project report, and preparing a journal submission. It is deliberately scoped for a practical, timely implementation while retaining a reproducible experimental comparison.
+
+This is a plan, not a claim that the proposed system works or that the research gap is already proven. Confirm the scope and resolve the decisions marked below before implementation begins.
+
+## 2. Project definition
+
+### Working title
+
+**Repository-Aware Bug-Fix Suggestions Using Code Retrieval and an Open-Weight Language Model**
+
+### Working scope
+
+The user supplies a GitHub repository and a bug report or GitHub issue. The system analyzes the issue, locates relevant code, generates a patch, runs tests in a temporary working copy, and returns the patch and test outcome for human review.
+
+The initial scope is issue-driven bug repair. It does not include autonomous discovery of unknown bugs, multiple programming languages, model training or fine-tuning, multi-agent orchestration, or automatic commits and pushes to GitHub. Those features can be reconsidered only if the core experiment is complete and there is time.
+
+### Research objective
+
+Measure whether repository-code retrieval improves test-verified bug-fix success for one open-weight model on a feasible Python issue benchmark, and characterize the quality and resource cost of the retrieval-enabled workflow.
+
+### Primary research question
+
+**RQ1.** Does adding repository-code retrieval improve test-verified patch success compared with using the same model without retrieved repository context?
+
+### Supporting questions
+
+**RQ2.** How often does retrieval surface files changed by the reference fix?
+
+**RQ3.** What additional runtime and token use are associated with retrieval and test-guided refinement?
+
+The paper contribution is expected to be a transparent empirical study in a resource-constrained open-weight setting, not a claim that RAG or automated repair is a new idea. The related-work review must check for closely matching studies before the contribution is finalized.
+
+## 3. Proposed system workflow
+
+1. Accept a repository URL and issue URL or issue text.
+2. Resolve the repository state to evaluate. For benchmark cases, use the pre-fix commit and record its commit hash.
+3. Parse the issue into a concise repair task while retaining the original text.
+4. Inspect and index supported source files, excluding generated files and irrelevant large folders.
+5. Retrieve a small, fixed-budget set of relevant code chunks. Start with one simple retrieval method; add a second only if the pilot supports it.
+6. Ask one selected open-weight model to produce a patch in a machine-readable unified-diff format.
+7. Validate and apply the patch in a temporary checkout, never in the user's original working tree.
+8. Run the issue-specific tests and available regression tests in the benchmark environment.
+9. If tests fail, allow at most one refinement attempt using the failure output.
+10. Return the proposed diff, files retrieved, tests run, and test outcome. The user decides whether to apply or publish the patch.
+
+The workflow is agentic through its coordinated observe, retrieve, patch, test, and bounded-refinement steps. A sequential controller is sufficient; a multi-agent design is not required.
+
+## 4. Decisions required before implementation
+
+| Decision | Initial direction | How to finalize |
+|---|---|---|
+| Bug input | User-supplied issue | Confirm that autonomous bug discovery is out of scope. |
+| Programming language | Python | Confirm benchmark tasks and repository mix. |
+| Benchmark | One issue-based benchmark with executable tests | Verify licensing, task availability, test setup, and Colab feasibility using a small pilot. |
+| Model | One open-weight code-capable model | Select after checking current Colab runtime, memory, context limit, and license. |
+| Retrieval | Begin with a simple repository-code retriever | Select chunking and retrieval settings using pilot tasks; freeze them before final evaluation. |
+| Evaluation size | Pilot first, then the largest feasible fixed subset | Estimate runtime and model availability from pilot; document exclusions and the reason for the final sample size. |
+| Execution environment | Google Colab for inference and benchmark experiments; GitHub for version control | Keep exact runtime and package versions in experiment records. |
+
+Do not assume that every benchmark can run unchanged in Colab. If benchmark environments cannot run reliably there, choose a compatible benchmark before building the full pipeline.
+
+## 5. Implementation phases and completion criteria
+
+### Phase 0 — Scope approval and feasibility
+
+- Confirm issue-driven scope and the limits above.
+- Review recent primary literature on repository retrieval, code repair, issue-resolution benchmarks, and open-weight models.
+- Test one candidate benchmark case in Colab, including repository checkout and tests.
+- Test candidate model loading and one inference call.
+
+**Complete when:** the benchmark and model can run a small end-to-end feasibility pilot, or a documented alternative is chosen.
+
+### Phase 1 — Baseline repair pipeline
+
+- Implement repository and issue input handling.
+- Pin and log the evaluated repository commit.
+- Build prompt construction and structured patch output.
+- Apply and validate patches only in a disposable checkout.
+- Save per-instance inputs, model settings, proposed patch, test commands, logs, and result.
+
+**Complete when:** the baseline can be run repeatedly on pilot tasks and its outputs are auditable.
+
+### Phase 2 — Retrieval-enabled pipeline
+
+- Parse supported source files and divide them into reproducible code chunks.
+- Index chunks and retrieve issue-relevant code using the chosen lightweight method.
+- Record ranked retrieved chunks, source file and line range, and retrieval configuration.
+- Supply a fixed context budget to the model.
+
+**Complete when:** retrieval output is inspectable and the same instance can be replayed with fixed settings.
+
+### Phase 3 — Bounded test-feedback refinement
+
+- Run the generated patch through benchmark tests.
+- If it fails, pass a concise test failure summary to the model for one refinement attempt.
+- Track initial and refined patch outcomes separately.
+
+**Complete when:** test execution and refinement produce clear per-attempt records and do not alter source repositories outside the temporary workspace.
+
+### Phase 4 — Pilot and protocol freeze
+
+- Run a small set spanning more than one repository and bug type where available.
+- Check test setup, execution time, model failures, patch formatting, and data leakage risks.
+- Freeze the benchmark subset, prompts, decoding parameters, retrieval method, context limit, test rules, and exclusion criteria before the full run.
+
+**Complete when:** the protocol is written in `research/protocol/experiment-protocol.md` and no tuning is performed on final evaluation cases.
+
+### Phase 5 — Full controlled evaluation
+
+- Run two primary conditions on the same instances: (A) same model without retrieved repository code; (B) same model with retrieved code.
+- Keep model version, issue text, decoding settings, patch format, test environment, and output limits consistent.
+- Include test-guided refinement either in both conditions or as a separately reported ablation; do not give only one condition extra repair attempts.
+- Save raw outputs and logs locally; do not commit benchmark repositories, credentials, model tokens, or large generated artifacts.
+
+**Complete when:** every included case has a result or a documented exclusion, and the run can be reproduced from the recorded configuration.
+
+### Phase 6 — Analysis and MTech report
+
+- Calculate metrics from saved per-instance records.
+- Inspect failures and representative success cases.
+- State limitations and threats to validity.
+- Update Part I claims, architecture, algorithms, datasets, and evaluation metrics to match what was actually implemented.
+- Write the final MTech report only after results are available; never describe proposed results as achieved results.
+
+**Complete when:** all reported values can be regenerated from saved data and the report distinguishes measurements from interpretation.
+
+### Phase 7 — Research paper and journal submission preparation
+
+- Recheck the literature for overlap and refine the research gap based on the implemented experiment.
+- Write the paper with enough detail to reproduce the benchmark subset, model setup, prompts, retrieval configuration, test procedure, and exclusions.
+- Report negative and mixed results as well as positive ones.
+- Select a journal after the paper is drafted; verify scope, peer-review process, indexing claims, fees, and submission requirements from authoritative sources.
+- Submit only after the authors approve the final manuscript and venue.
+
+**Complete when:** the paper makes a bounded, evidence-backed contribution and the target venue has passed legitimacy and affordability checks.
+
+## 6. Experimental design
+
+### Conditions
+
+- **No-retrieval baseline:** issue input and the same model, without automatically retrieved repository snippets.
+- **Retrieval condition:** the same issue and model, augmented with repository code retrieved by the selected method.
+- **Optional refinement ablation:** compare first patch with one test-feedback refinement, applied consistently and reported separately.
+
+The baseline must be described precisely. It must not secretly receive manually selected gold files while the retrieval condition does not, or vice versa.
+
+### Primary outcome
+
+- **Test-verified success rate:** proportion of evaluated issues where the generated patch passes the benchmark's required issue-specific tests. Report the numerator and denominator, not only a percentage.
+
+### Supporting outcomes
+
+- **Reference-file Recall@k:** whether at least one file changed by the reference fix appears among the top-k retrieved files. This is a localization proxy, not proof that the patch is correct.
+- **Patch validity:** whether the output parses as a patch and applies cleanly.
+- **Regression result:** whether the required regression suite passes, where available.
+- **Runtime and token use:** measured per issue and by condition.
+- **Refinement effect:** initial versus refined outcomes, where refinement is included.
+
+Do not use classification accuracy, precision, recall, or F1 as the main patch-correctness metrics unless a defensible classification labeling scheme is designed. A plausible patch is not counted as correct unless it meets the stated validation rule.
+
+### Reproducibility and leakage controls
+
+- Evaluate code at the benchmark's pre-fix commit.
+- Keep the reference patch and post-fix code unavailable to the agent.
+- Log repository and benchmark identifiers, commit hashes, model identifier/version, prompts, retrieval settings, test commands, and environment versions.
+- Define exclusions before the full run; report every exclusion and reason.
+- Use repeat runs if the model is stochastic and resources permit; otherwise state deterministic settings and sampling limitations.
+- Report confidence intervals or other uncertainty estimates appropriate to the sample size.
+
+## 7. Research paper outline
+
+1. **Abstract:** problem, controlled setup, key measured results, and bounded conclusion.
+2. **Introduction:** issue-driven repair challenge, research question, and contributions.
+3. **Related work:** APR, LLM repair, repository retrieval, RAG for code, benchmarks.
+4. **System:** architecture and bounded repair workflow.
+5. **Methodology:** benchmark selection, model, retrieval, conditions, metrics, protocol, and leakage controls.
+6. **Results:** test-verified success, localization, runtime/token results, and uncertainty.
+7. **Discussion:** when retrieval helped or hurt and why.
+8. **Threats to validity:** benchmark representativeness, sample size, model/version dependence, test coverage, and Colab variability.
+9. **Conclusion:** what the evidence supports and next steps.
+
+## 8. Repository and data practices
+
+- Keep source code, experiment protocol, and paper drafts version-controlled.
+- Keep benchmark data, cloned repositories, credentials, caches, model weights, and large run outputs out of Git unless licensing and size have been checked and inclusion is necessary.
+- Store a small, non-sensitive run manifest and aggregate results in the repository; preserve raw logs separately as appropriate.
+- Use a `.env.example` for variable names only; never commit `.env`, access tokens, or private repository URLs.
+- Use GitHub issues/PRs for project tracking after the remote repository is selected.
+
+## 9. Definition of project completion
+
+The MTech project is complete when the scoped agent runs end-to-end on the selected benchmark subset, generates and validates patches in an isolated environment, the controlled comparison is reproducible, results and limitations are reported honestly, and the final MTech report matches the implementation.
+
+The paper is ready for submission when the related-work review supports a specific contribution, the methods and results are auditable, limitations are clear, and a legitimate affordable journal has been verified. Publication acceptance is outside the project's control and cannot be guaranteed.
+
+## 10. Approval gate
+
+This plan is pending the user's confirmation of the issue-driven scope and research direction. Implementation begins only after that confirmation.

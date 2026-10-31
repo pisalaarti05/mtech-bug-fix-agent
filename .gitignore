@@ -1,0 +1,38 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+env/
+*.egg-info/
+dist/
+build/
+
+# Jupyter and editor state
+.ipynb_checkpoints/
+.vscode/
+.idea/
+
+# Credentials and local configuration
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Downloaded data, model files, and temporary repository workspaces
+data/raw/*
+!data/raw/README.md
+data/processed/*
+!data/processed/README.md
+workspaces/*
+!workspaces/README.md
+*.safetensors
+*.gguf
+*.pt
+*.bin
+
+# Generated experiment artifacts
+artifacts/runs/*
+!artifacts/README.md
+*.log
