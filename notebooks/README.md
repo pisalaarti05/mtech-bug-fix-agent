@@ -1,3 +1,3 @@
 # Notebooks
 
-Use notebooks for exploratory analysis and controlled evaluation support. Keep reusable system behavior in `src/bugfix_agent/` and avoid committing secrets, downloaded model files, or large notebook outputs.
+- colab_feasibility_pilot.ipynb — checks the available Colab Python/GPU runtime, installs the project from its public GitHub repository, and verifies the command-line entry point. Use its hardware output before selecting the model for the pilot.
