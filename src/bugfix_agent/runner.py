@@ -5,6 +5,7 @@ import shlex
 import subprocess
 import time
 from datetime import datetime, timezone
+from importlib.metadata import PackageNotFoundError, version as package_version
 from pathlib import Path
 from .issue import Issue
 from .model import HuggingFaceModel
@@ -24,10 +25,17 @@ def run_repair(repository_url: str, issue: Issue, model_id: str, output_dir: Pat
         "issue": {"title": issue.title, "body": issue.body, "source": issue.source},
         "model_id": model_id,
         "model_load_seconds": model.load_seconds,
+        "model_revision": model.revision,
         "condition": "retrieval" if use_retrieval else "no_retrieval",
         "top_k": top_k if use_retrieval else 0,
         "test_command": test_command,
+        "software_versions": {},
     }
+    for package in ("torch", "transformers", "accelerate", "bitsandbytes"):
+        try:
+            record["software_versions"][package] = package_version(package)
+        except PackageNotFoundError:
+            continue
     with RepositoryCheckout(repository_url, commit) as checkout:
         record["resolved_commit"] = checkout.resolved_commit
         ranked = retrieve(issue.prompt_text, collect_chunks(checkout.path), limit=top_k) if use_retrieval else []

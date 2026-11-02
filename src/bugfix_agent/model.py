@@ -33,6 +33,7 @@ class HuggingFaceModel:
             device_map="auto",
         )
         self._model.eval()
+        self.revision = getattr(self._model.config, "_commit_hash", None)
         self.load_seconds = round(time.perf_counter() - load_started, 3)
         self.last_usage: dict[str, int | float] = {}
 
