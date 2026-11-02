@@ -112,14 +112,19 @@ def run_goldset_record(
                 results["test_status"] = "skipped"
                 results["skip_reason"] = before.detail
             elif not before.failures:
+                results["buggy_revision_test_status"] = "passed"
                 results["test_status"] = "skipped"
                 results["skip_reason"] = "The benchmark test did not fail on the buggy revision."
             else:
+                results["buggy_revision_test_status"] = "failed_as_expected"
+                results["buggy_revision_failing_tests"] = sorted(before.failures)
                 reference = run_tests(checkout.after, record["test_file"], names, python=python_version)
                 if not reference.ran or reference.failures:
+                    results["reference_fix_test_status"] = "failed_or_unavailable"
                     results["test_status"] = "skipped"
                     results["skip_reason"] = "The reference fix did not pass in this Colab environment."
                 else:
+                    results["reference_fix_test_status"] = "passed"
                     target = Path(checkout.source_path(checkout.before))
                     if not target.is_file() or record["source_before"] not in target.read_text(encoding="utf-8", errors="replace"):
                         results["test_status"] = "skipped"
@@ -157,8 +162,15 @@ def run_goldset_record(
                         else:
                             after = run_tests(checkout.before, record["test_file"], names, python=python_version)
                             if not after.ran:
-                                results["test_status"] = "skipped"
-                                results["skip_reason"] = after.detail
+                                # The unmodified buggy revision and the reference
+                                # fix both ran successfully above. A collection
+                                # error after replacing the code is therefore a
+                                # failed generated repair, not an environment skip.
+                                results["test_status"] = "failed"
+                                results["failure_reason"] = (
+                                    "Tests could not collect or run after the model replacement: "
+                                    + after.detail
+                                )
                             elif after.failures:
                                 results["test_status"] = "failed"
                                 results["failing_tests"] = sorted(after.failures)
