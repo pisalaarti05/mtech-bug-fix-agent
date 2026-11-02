@@ -10,6 +10,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--repo", required=True, help="Public Git repository URL")
     parser.add_argument("--issue", required=True, help="Bug report text or public GitHub issue URL")
     parser.add_argument("--model", required=True, help="Hugging Face model ID (select after the Colab pilot)")
+    parser.add_argument("--model-revision", help="Optional Hugging Face commit SHA; resolved SHA is always recorded")
     parser.add_argument("--commit", help="Repository commit to evaluate; defaults to the current remote default branch")
     parser.add_argument("--output", default="artifacts/runs", help="Folder for local JSON run records")
     parser.add_argument("--no-retrieval", action="store_true", help="Run the controlled no-retrieval baseline")
@@ -23,7 +24,7 @@ def main() -> None:
     if args.top_k < 1 or args.test_timeout < 1:
         raise SystemExit("--top-k and --test-timeout must be positive numbers.")
     issue = load_issue(args.issue)
-    output = run_repair(repository_url=args.repo, issue=issue, model_id=args.model, output_dir=Path(args.output), commit=args.commit, use_retrieval=not args.no_retrieval, top_k=args.top_k, test_command=args.test_command, test_timeout=args.test_timeout)
+    output = run_repair(repository_url=args.repo, issue=issue, model_id=args.model, output_dir=Path(args.output), commit=args.commit, model_revision=args.model_revision, use_retrieval=not args.no_retrieval, top_k=args.top_k, test_command=args.test_command, test_timeout=args.test_timeout)
     print(f"Run record saved to: {output}")
 
 if __name__ == "__main__":

@@ -4,21 +4,28 @@ import time
 
 class HuggingFaceModel:
     """Load a selected model in 4-bit NF4 mode for a CUDA Colab GPU."""
-    def __init__(self, model_id: str, max_new_tokens: int = 700, max_input_tokens: int = 8192):
+    def __init__(self, model_id: str, max_new_tokens: int = 700, max_input_tokens: int = 8192, revision: str | None = None):
         if not model_id:
             raise ValueError("Choose a model ID after the Colab feasibility pilot.")
         try:
             import torch
+            from huggingface_hub import HfApi
             from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
         except ImportError as exc:
             raise RuntimeError("Model support is missing. Install with: pip install -e '.[model]'") from exc
         if not torch.cuda.is_available():
             raise RuntimeError("This model configuration needs a CUDA GPU. In Colab, select Runtime > Change runtime type > T4 GPU.")
         self.model_id = model_id
+        # Resolve a moving branch such as "main" to an immutable Hub commit.
+        # Use this same SHA for tokenizer and model so the run is reproducible.
+        try:
+            self.revision = revision or HfApi().model_info(model_id).sha
+        except Exception as exc:
+            raise RuntimeError(f"Could not resolve a Hugging Face revision for {model_id!r}: {exc}") from exc
         self.max_new_tokens = max_new_tokens
         self.max_input_tokens = max_input_tokens
         self._torch = torch
-        self._tokenizer = AutoTokenizer.from_pretrained(model_id)
+        self._tokenizer = AutoTokenizer.from_pretrained(model_id, revision=self.revision)
         quantization = BitsAndBytesConfig(
             load_in_4bit=True,
             bnb_4bit_quant_type="nf4",
@@ -28,12 +35,12 @@ class HuggingFaceModel:
         load_started = time.perf_counter()
         self._model = AutoModelForCausalLM.from_pretrained(
             model_id,
+            revision=self.revision,
             quantization_config=quantization,
             torch_dtype=torch.float16,
             device_map="auto",
         )
         self._model.eval()
-        self.revision = getattr(self._model.config, "_commit_hash", None)
         self.load_seconds = round(time.perf_counter() - load_started, 3)
         self.last_usage: dict[str, int | float] = {}
 

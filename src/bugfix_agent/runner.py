@@ -14,16 +14,17 @@ from .prompts import repair_prompt
 from .repository import RepositoryCheckout
 from .retrieval import collect_chunks, retrieve
 
-def run_repair(repository_url: str, issue: Issue, model_id: str, output_dir: Path, *, commit: str | None = None, use_retrieval: bool = True, top_k: int = 6, test_command: str | None = None, test_timeout: int = 600) -> Path:
+def run_repair(repository_url: str, issue: Issue, model_id: str, output_dir: Path, *, commit: str | None = None, model_revision: str | None = None, use_retrieval: bool = True, top_k: int = 6, test_command: str | None = None, test_timeout: int = 600) -> Path:
     """Run a repair in a disposable clone and save its evidence record."""
     started = time.perf_counter()
-    model = HuggingFaceModel(model_id)
+    model = HuggingFaceModel(model_id, revision=model_revision)
     record: dict[str, object] = {
         "created_at_utc": datetime.now(timezone.utc).isoformat(),
         "repository_url": repository_url,
         "requested_commit": commit,
         "issue": {"title": issue.title, "body": issue.body, "source": issue.source},
         "model_id": model_id,
+        "requested_model_revision": model_revision,
         "model_load_seconds": model.load_seconds,
         "model_revision": model.revision,
         "condition": "retrieval" if use_retrieval else "no_retrieval",
@@ -31,7 +32,7 @@ def run_repair(repository_url: str, issue: Issue, model_id: str, output_dir: Pat
         "test_command": test_command,
         "software_versions": {},
     }
-    for package in ("torch", "transformers", "accelerate", "bitsandbytes"):
+    for package in ("torch", "transformers", "accelerate", "bitsandbytes", "huggingface_hub"):
         try:
             record["software_versions"][package] = package_version(package)
         except PackageNotFoundError:
