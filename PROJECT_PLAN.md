@@ -20,11 +20,11 @@ The initial scope is issue-driven bug repair. It does not include autonomous dis
 
 ### Research objective
 
-Measure whether repository-code retrieval improves test-verified bug-fix success for one open-weight model on a feasible Python issue benchmark, and characterize the quality and resource cost of the retrieval-enabled workflow.
+Measure whether repository-code retrieval improves test-verified bug-fix success for one open-weight model on a feasible Python bug-fix benchmark, and characterize the quality and resource cost of the retrieval-enabled workflow. The current Goldset candidate presents a behavior specification and buggy code rather than a full issue report.
 
 ### Primary research question
 
-**RQ1.** Does adding repository-code retrieval improve test-verified patch success compared with using the same model without retrieved repository context?
+**RQ1.** On the selected Python bug-fix benchmark, does adding repository-code retrieval improve test-verified repair success compared with giving the same model the benchmark specification and buggy target code without additional retrieved repository snippets?
 
 ### Supporting questions
 
@@ -55,13 +55,13 @@ The workflow is agentic through its coordinated observe, retrieve, patch, test, 
 |---|---|---|
 | Bug input | User-supplied issue | Confirm that autonomous bug discovery is out of scope. |
 | Programming language | Python | Confirm benchmark tasks and repository mix. |
-| Benchmark | Goldset is the Colab-compatible candidate after SWE-bench proved too resource-intensive | Verify one record in Colab before freezing it. Goldset contains Python bug records with tests; prompts are specifications and source, not full GitHub issue reports. Use this distinction when framing the research question and claims. |
+| Benchmark | Goldset is the Colab-compatible candidate after SWE-bench proved too resource-intensive | One post-release record passed its Goldset verifier in Colab. The matched agent pilot is still required before freezing the benchmark. Goldset prompts are specifications plus buggy source, not full GitHub issue reports. |
 | Model | One open-weight code-capable model | Select after checking current Colab runtime, memory, context limit, and license. |
 | Retrieval | Begin with a simple repository-code retriever | Select chunking and retrieval settings using pilot tasks; freeze them before final evaluation. |
 | Evaluation size | Pilot first, then the largest feasible fixed subset | Estimate runtime and model availability from pilot; document exclusions and the reason for the final sample size. |
 | Execution environment | Google Colab for inference and benchmark experiments; GitHub for version control | Keep exact runtime and package versions in experiment records. |
 
-Do not assume that every benchmark can run unchanged in Colab. The first SWE-bench Lite feasibility check found only 98 GiB free disk and no Docker in the user's runtime, so its official harness cannot run there. Goldset is the next candidate: its own verifier runs without Docker, replays one record at a time, uses repository regression tests, and supports explicit sampling. It is not an issue-report benchmark: each task supplies a behavioral specification and broken code. Complete one Colab verification before freezing Goldset or changing RQ wording. Use only task records from after the selected model's public release where feasible, and record the exact corpus/model revisions.
+Do not assume that every benchmark can run unchanged in Colab. The first SWE-bench Lite feasibility check found only 98 GiB free disk and no Docker in the user's runtime, so its official harness cannot run there. Goldset is the current candidate: one post-release record passed its verifier in Colab without Docker. Its tasks supply a behavioral specification and buggy code, not a full issue report. The next gate is to complete a matched no-retrieval/retrieval pilot and confirm that both conditions are scored with the same test protocol. Use records fixed after the selected model's public release where feasible, and record exact corpus/model revisions.
 
 ## 5. Implementation phases and completion criteria
 

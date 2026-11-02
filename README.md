@@ -42,6 +42,10 @@ Then run one issue. Use a public GitHub repository URL and either issue text or 
 
 The test command executes repository code in the temporary clone. Review the repository and its test instructions before running it. The original repository is not modified. Run bugfix-agent --help to see all options, including a fixed commit and --no-retrieval.
 
+## Goldset pilot
+
+The Colab notebook includes a one-record Goldset runner that reuses the selected model for a matched no-retrieval/retrieval comparison. Install `python -m pip install --editable ".[model,benchmark]"` for local setup. The benchmark helper uses Goldset's verifier to confirm the recorded test fails on the buggy revision and passes on the reference revision before scoring the generated replacement. It excludes the target source and test file from retrieved context and saves each condition as a separate JSON record. This is a feasibility pilot; it is not a full benchmark result.
+
 Run records are saved under artifacts/runs/, which is ignored by Git. Do not put access tokens or private repository URLs in committed files.
 
 ## Google Colab

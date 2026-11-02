@@ -12,7 +12,9 @@ For the planned retrieval comparison, both conditions must receive the same Gold
 
 The current Colab notebook selects a file-level record committed after 2025-01-01 and runs the Goldset verifier for that one fingerprint. This date filter is after the public release of Qwen2.5-Coder (2024-09-19), reducing direct benchmark-answer exposure to that fixed model snapshot. It does not prove that all benchmark information is absent from pretraining. The corpus and model commit SHA, selected record fingerprint, license, parent/fix revisions, interpreter, and pass/fail/skip output must be logged.
 
-**Status:** candidate only. Do not begin the full evaluation until one Colab record verifies successfully and the adaptation preserves matched no-retrieval/retrieval conditions.
+**Colab feasibility result (2026-11-02):** Goldset revision `fe4f9bfbcb46637481242af2315c6b59951710b4`; record `4e210790188a0356` (`erikrose/parsimonious`, fix date 2025-01-02, MIT) verified as `passed 1, failed 0, skipped 0` in the user's Colab. This confirms the official one-record oracle runs there. The notebook now includes the next one-record agent pilot under matched no-retrieval and retrieval conditions. Retrieved chunks exclude both the target source file and the benchmark test file, while both conditions receive the same specification and buggy source.
+
+**Status:** Goldset is the benchmark candidate. Freeze it only after the matched agent pilot completes and its run records confirm both conditions used the same model revision, task, and test protocol.
 
 ## Sources
 
