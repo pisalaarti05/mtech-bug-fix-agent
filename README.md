@@ -2,7 +2,7 @@
 
 An MTech research prototype that compares bug-fix suggestions from one language model with and without automatically retrieved Python code. It works on a disposable clone, records the exact commit, validates the suggested patch, and can run a test command before saving a local JSON record.
 
-The research plan remains the source of truth for decisions about the benchmark, model, Colab feasibility, and final experiment. Those choices are intentionally left open until the pilot.
+The research plan remains the source of truth for the model, benchmark, Colab feasibility, and final experiment. Goldset is the current small-benchmark candidate; one Colab verification is still required before it is frozen.
 
 ## Current implementation
 
@@ -16,7 +16,7 @@ The first pipeline step is in place:
 - Validate and apply that diff only in the temporary clone.
 - Optionally run a test command and save the prompt, retrieved chunks, patch, commit, and test result as JSON.
 
-Model libraries are optional until a model is selected after the Colab pilot. The retriever and input handling use only Python's standard library.
+Model libraries are optional until the Colab model pilot is complete. The retriever and input handling use only Python's standard library.
 
 ## Local setup
 
@@ -46,7 +46,7 @@ Run records are saved under artifacts/runs/, which is ignored by Git. Do not put
 
 ## Google Colab
 
-Colab will be used for the feasibility pilot and model inference after the source code is available from the Git remote. The remote is not configured yet. The benchmark and model remain undecided until that pilot.
+Colab is used for the feasibility pilot and model inference. The SWE-bench Lite official harness did not fit the available runtime (98 GiB free disk, Docker unavailable). The notebook now checks one Goldset record as a smaller Python benchmark candidate. Goldset prompts use a behavior specification and buggy code, not a full GitHub issue report; report results with that scope if adopted.
 
 ## Project structure
 

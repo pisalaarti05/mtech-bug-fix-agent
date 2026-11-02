@@ -55,13 +55,13 @@ The workflow is agentic through its coordinated observe, retrieve, patch, test, 
 |---|---|---|
 | Bug input | User-supplied issue | Confirm that autonomous bug discovery is out of scope. |
 | Programming language | Python | Confirm benchmark tasks and repository mix. |
-| Benchmark | One issue-based benchmark with executable tests | Verify licensing, task availability, test setup, and Colab feasibility using a small pilot. |
+| Benchmark | Goldset is the Colab-compatible candidate after SWE-bench proved too resource-intensive | Verify one record in Colab before freezing it. Goldset contains Python bug records with tests; prompts are specifications and source, not full GitHub issue reports. Use this distinction when framing the research question and claims. |
 | Model | One open-weight code-capable model | Select after checking current Colab runtime, memory, context limit, and license. |
 | Retrieval | Begin with a simple repository-code retriever | Select chunking and retrieval settings using pilot tasks; freeze them before final evaluation. |
 | Evaluation size | Pilot first, then the largest feasible fixed subset | Estimate runtime and model availability from pilot; document exclusions and the reason for the final sample size. |
 | Execution environment | Google Colab for inference and benchmark experiments; GitHub for version control | Keep exact runtime and package versions in experiment records. |
 
-Do not assume that every benchmark can run unchanged in Colab. If benchmark environments cannot run reliably there, choose a compatible benchmark before building the full pipeline.
+Do not assume that every benchmark can run unchanged in Colab. The first SWE-bench Lite feasibility check found only 98 GiB free disk and no Docker in the user's runtime, so its official harness cannot run there. Goldset is the next candidate: its own verifier runs without Docker, replays one record at a time, uses repository regression tests, and supports explicit sampling. It is not an issue-report benchmark: each task supplies a behavioral specification and broken code. Complete one Colab verification before freezing Goldset or changing RQ wording. Use only task records from after the selected model's public release where feasible, and record the exact corpus/model revisions.
 
 ## 5. Implementation phases and completion criteria
 
