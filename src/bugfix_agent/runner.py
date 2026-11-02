@@ -23,6 +23,7 @@ def run_repair(repository_url: str, issue: Issue, model_id: str, output_dir: Pat
         "requested_commit": commit,
         "issue": {"title": issue.title, "body": issue.body, "source": issue.source},
         "model_id": model_id,
+        "model_load_seconds": model.load_seconds,
         "condition": "retrieval" if use_retrieval else "no_retrieval",
         "top_k": top_k if use_retrieval else 0,
         "test_command": test_command,
@@ -38,6 +39,7 @@ def run_repair(repository_url: str, issue: Issue, model_id: str, output_dir: Pat
         prompt = repair_prompt(issue, context)
         record["prompt"] = prompt
         response = model.generate(prompt)
+        record["generation_usage"] = model.last_usage
         record["model_response"] = response
         try:
             diff = extract_diff(response)
@@ -50,7 +52,7 @@ def run_repair(repository_url: str, issue: Issue, model_id: str, output_dir: Pat
             record["test_status"] = "not_run"
         else:
             if test_command:
-                command = shlex.split(test_command, posix=False)
+                command = shlex.split(test_command)
                 if not command:
                     raise ValueError("The test command cannot be empty.")
                 try:
