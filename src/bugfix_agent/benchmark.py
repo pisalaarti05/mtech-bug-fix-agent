@@ -63,7 +63,10 @@ def run_goldset_record(
     try:
         from goldset.exec import Checkout, ladder_for, run_tests, run_tests_anywhere, test_names
     except ImportError as exc:
-        raise RuntimeError("Install Goldset support with: pip install -e '.[benchmark]'") from exc
+        raise RuntimeError(
+            "Goldset's pinned benchmark helpers are unavailable. Rerun the notebook's "
+            "Goldset verification/setup cell to install its pinned source checkout."
+        ) from exc
 
     from .model import HuggingFaceModel as _HuggingFaceModel  # avoid runtime import for users of the core package
 
