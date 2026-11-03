@@ -215,10 +215,10 @@ For the current restarted Colab runtime, guide the user through these notebook s
 2. Run the first code cell, which reports RAM, free disk, GPU name, and total/free GPU memory, then recommends the model tier. Stop if it reports an error or insufficient resources; explain the next route.
 3. Run **Download and install the project**.
 4. Run **Confirm the command is ready**.
-5. Run **Verify one record from the smaller Goldset benchmark**. Continue only if it reports one pass and zero failures/skips.
+5. Run **Verify the three Goldset pilot records**. Continue only when each record reports one pass, zero failures, and zero skips; if any fails verification, stop and share that output so I can choose an alternate.
 6. Run the model-libraries installation cell.
 7. Run **Load the selected model and make one short request**. Continue only if a model revision and non-empty response are printed.
-8. Run **Run one Goldset task through the agent with and without retrieval**. Review both outputs and their run records; both conditions must complete before calling the paired pilot successful.
+8. Run **Run three Goldset tasks through the agent with and without retrieval**. This produces six runs (two conditions for each task). Review the per-task outputs and run records; a failed generated repair counts as a condition result, while a skipped/environment error does not count as scored.
 
 Skip **Check one SWE-bench Lite task and Colab capacity**; that feasibility check is already complete and the official harness is not supported by the available runtime. After each step, inspect the output before directing the user to the next step. If runtime restarts, begin again at step 1.
 
