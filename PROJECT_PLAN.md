@@ -56,12 +56,12 @@ The workflow is agentic through its coordinated observe, retrieve, patch, test, 
 | Bug input | User-supplied issue | Confirm that autonomous bug discovery is out of scope. |
 | Programming language | Python | Confirm benchmark tasks and repository mix. |
 | Benchmark | Goldset is the Colab-compatible candidate after SWE-bench proved too resource-intensive | One post-release record passed its Goldset verifier in Colab. The matched agent pilot is still required before freezing the benchmark. Goldset prompts are specifications plus buggy source, not full GitHub issue reports. |
-| Model | One open-weight code-capable model | Select after checking current Colab runtime, memory, context limit, and license. |
+| Model | One open-weight code-capable model selected per runtime from a fixed model ladder | Every fresh runtime must report free disk, system RAM, GPU name, total/free VRAM, and PyTorch/CUDA state before any weight download. Use the same selected model and limits for both conditions; log its resolved immutable revision. |
 | Retrieval | Begin with a simple repository-code retriever | Select chunking and retrieval settings using pilot tasks; freeze them before final evaluation. |
 | Evaluation size | Pilot first, then the largest feasible fixed subset | Estimate runtime and model availability from pilot; document exclusions and the reason for the final sample size. |
 | Execution environment | Google Colab for inference and benchmark experiments; GitHub for version control | Keep exact runtime and package versions in experiment records. |
 
-Do not assume that every benchmark can run unchanged in Colab. The first SWE-bench Lite feasibility check found only 98 GiB free disk and no Docker in the user's runtime, so its official harness cannot run there. Goldset is the current candidate: one post-release record passed its verifier in Colab without Docker. Its tasks supply a behavioral specification and buggy code, not a full issue report. The next gate is to complete a matched no-retrieval/retrieval pilot and confirm that both conditions are scored with the same test protocol. Use records fixed after the selected model's public release where feasible, and record exact corpus/model revisions.
+Do not assume that every benchmark can run unchanged in Colab. The first SWE-bench Lite feasibility check found only 98 GiB free disk and no Docker in the user's runtime, so its official harness cannot run there. Goldset is the current candidate: one post-release record passed its verifier in Colab without Docker. Its tasks supply a behavioral specification and buggy code, not a full issue report. The next gate is to restart from a resource report, select a model tier from current free GPU memory and disk, and complete a matched no-retrieval/retrieval pilot. Use records fixed after the selected model's public release where feasible, and record exact corpus/model revisions. A runtime restart invalidates the prior resource report and requires this check again.
 
 ## 5. Implementation phases and completion criteria
 
@@ -70,9 +70,11 @@ Do not assume that every benchmark can run unchanged in Colab. The first SWE-ben
 - Confirm issue-driven scope and the limits above.
 - Review recent primary literature on repository retrieval, code repair, issue-resolution benchmarks, and open-weight models.
 - Test one candidate benchmark case in Colab, including repository checkout and tests.
+- At every fresh Colab runtime, measure free disk, system RAM, GPU model, total/free VRAM, and PyTorch/CUDA state before downloading weights.
+- Select from the resource-gated model ladder in `research/protocol/benchmark-feasibility.md`; record the selected model, token limits, and resolved model revision.
 - Test candidate model loading and one inference call.
 
-**Complete when:** the benchmark and model can run a small end-to-end feasibility pilot, or a documented alternative is chosen.
+**Complete when:** the resource report is captured, an eligible model is selected, and that model completes one inference call; the benchmark and model can run a small end-to-end feasibility pilot, or a documented alternative is chosen.
 
 ### Phase 1 — Baseline repair pipeline
 
@@ -197,6 +199,10 @@ The MTech project is complete when the scoped agent runs end-to-end on the selec
 
 The paper is ready for submission when the related-work review supports a specific contribution, the methods and results are auditable, limitations are clear, and a legitimate affordable journal has been verified. Publication acceptance is outside the project's control and cannot be guaranteed.
 
-## 10. Approval gate
+## 10. Resource-first operating rule
+
+A runtime restart is a new hardware environment. Always run the notebook resource cell first and inspect its report before downloading model weights. The current pilot ladder is Qwen2.5-Coder-7B-Instruct when at least 11 GiB GPU memory is free and 20 GiB disk remains; 3B when at least 6 GiB GPU memory and 12 GiB disk remain; 1.5B when at least 4.5 GiB GPU memory and 8 GiB disk remain. Without CUDA or below these limits, stop before model download and select a suitable GPU runtime. Use the token budgets printed by the resource cell. If loading fails from memory pressure, record the error, restart, remeasure, and step down one tier. Never change models between paired conditions. Record the resource report, model ID and immutable model revision, quantization, token limits, and runtime errors in run artifacts. These thresholds are conservative pilot starting points, not a guarantee of successful loading.
+
+## 11. Approval gate
 
 This plan is pending the user's confirmation of the issue-driven scope and research direction. Implementation begins only after that confirmation.
