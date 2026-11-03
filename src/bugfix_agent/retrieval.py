@@ -7,7 +7,11 @@ from dataclasses import dataclass
 from pathlib import Path
 
 TOKEN_RE = re.compile(r"[A-Za-z_][A-Za-z_0-9]*|\d+")
-SKIP_DIRS = {".git", ".venv", "venv", "__pycache__", "build", "dist", "node_modules", "site-packages"}
+SKIP_DIRS = {
+    ".git", ".venv", "venv", "__pycache__", "build", "dist", "node_modules",
+    "site-packages", "test", "tests", "testing", "docs", "doc", "examples",
+    "example", ".snippets",
+}
 
 def _tokens(text: str) -> list[str]:
     normalized = re.sub(r"([a-z0-9])([A-Z])", r"\1 \2", text)
@@ -29,7 +33,11 @@ def collect_chunks(root: Path, chunk_lines: int = 80, overlap: int = 12) -> list
         raise ValueError("Require chunk_lines > overlap >= 0.")
     chunks: list[CodeChunk] = []
     for path in sorted(root.rglob("*.py")):
-        if any(part in SKIP_DIRS for part in path.parts):
+        relative = path.relative_to(root)
+        if any(part.lower() in SKIP_DIRS for part in relative.parts):
+            continue
+        filename = path.name.lower()
+        if filename.startswith("test_") or filename.endswith("_test.py"):
             continue
         try:
             lines = path.read_text(encoding="utf-8").splitlines()
@@ -40,7 +48,7 @@ def collect_chunks(root: Path, chunk_lines: int = 80, overlap: int = 12) -> list
             end = min(start + chunk_lines, len(lines))
             content = "\n".join(lines[start:end]).strip()
             if content:
-                chunks.append(CodeChunk(path.relative_to(root).as_posix(), start + 1, end, content))
+                chunks.append(CodeChunk(relative.as_posix(), start + 1, end, content))
             if end == len(lines):
                 break
     return chunks

@@ -1,6 +1,7 @@
 """Run one Goldset repair record with or without repository retrieval."""
 from __future__ import annotations
 
+import ast
 import json
 import re
 import time
@@ -22,15 +23,32 @@ def _strip_code_fence(text: str) -> str:
 
 
 def _prompt(record: dict[str, object], retrieved: list[dict[str, object]]) -> str:
-    code_kind = "function" if record["granularity"] == "function" else "file"
+    if record["granularity"] == "file":
+        code_kind = "file"
+    else:
+        try:
+            nodes = ast.parse(str(record["source_before"])).body
+        except SyntaxError:
+            nodes = []
+        target_nodes = [
+            node for node in nodes
+            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef))
+        ]
+        if len(target_nodes) == 1 and isinstance(target_nodes[0], ast.ClassDef):
+            code_kind = "class"
+        elif len(target_nodes) == 1 and isinstance(target_nodes[0], (ast.FunctionDef, ast.AsyncFunctionDef)):
+            code_kind = "function"
+        else:
+            code_kind = "code block"
     spec_source = record.get("spec_source")
     spec_label = "documented behavior" if spec_source == "docstring" else "bug-fix task specification"
     parts = [
-        "You repair Python code. Make the smallest defensible change that satisfies the specification.",
-        f"This {code_kind} is from {record['repo']}.",
+        "You repair Python code. Make the smallest change that satisfies the specification.",
+        f"The exact replacement target is a {code_kind} from {record['repo']}.",
         f"\nSPECIFICATION ({spec_label}):\n{record['spec']}",
         f"\nBUGGY CODE TO REPLACE:\n{record['source_before']}",
-        f"\nReturn the complete corrected {code_kind} and nothing else. Preserve its name, signature, and indentation. Do not return a diff, explanation, or Markdown fence.",
+        "\nReturn only the complete corrected replacement for the exact buggy code block above. Do not return imports, tests, documentation examples, retrieved snippets, neighboring definitions, a diff, an explanation, or a Markdown fence.",
+        "Preserve its name, signature, decorators, base classes, annotations, and indentation unless the specification explicitly requires changing them. Do not invent a class base, import, or identifier; use only names visible in the target code.",
     ]
     if retrieved:
         snippets = [
@@ -142,11 +160,17 @@ def run_goldset_record(
                             # Retrieval may use only information also given to
                             # the no-retrieval condition: the spec and buggy code.
                             query = f"{record.get('spec', '')}\n{record.get('source_before', '')}"
-                            ranked = retrieve(query, chunks, limit=top_k)
-                            retrieved = [
-                                {"path": chunk.path, "start_line": chunk.start_line, "end_line": chunk.end_line, "score": score, "text": chunk.text}
-                                for chunk, score in ranked
-                            ]
+                            ranked = retrieve(query, chunks, limit=len(chunks)) if chunks else []
+                            seen_paths: set[str] = set()
+                            for chunk, score in ranked:
+                                if chunk.path in seen_paths:
+                                    continue
+                                seen_paths.add(chunk.path)
+                                retrieved.append(
+                                    {"path": chunk.path, "start_line": chunk.start_line, "end_line": chunk.end_line, "score": score, "text": chunk.text}
+                                )
+                                if len(retrieved) == top_k:
+                                    break
                         prompt = _prompt(record, retrieved)
                         results["prompt"] = prompt
                         results["retrieved_chunks"] = retrieved
