@@ -203,6 +203,25 @@ The paper is ready for submission when the related-work review supports a specif
 
 A runtime restart is a new hardware environment. Always run the notebook resource cell first and inspect its report before downloading model weights. The current pilot ladder is Qwen2.5-Coder-7B-Instruct when at least 11 GiB GPU memory is free and 20 GiB disk remains; 3B when at least 6 GiB GPU memory and 12 GiB disk remain; 1.5B when at least 4.5 GiB GPU memory and 8 GiB disk remain. Without CUDA or below these limits, stop before model download and select a suitable GPU runtime. Use the token budgets printed by the resource cell. If loading fails from memory pressure, record the error, restart, remeasure, and step down one tier. Never change models between paired conditions. Record the resource report, model ID and immutable model revision, quantization, token limits, and runtime errors in run artifacts. These thresholds are conservative pilot starting points, not a guarantee of successful loading.
 
-## 11. Approval gate
+## 11. Beginner hand-holding and error recovery
+
+The user is new to coding and needs explicit guidance at every stage. Never assume they know what a notebook cell, runtime, terminal command, package, variable, or traceback means. Give one step at a time with the exact notebook section/cell heading to open, what to click or paste, what successful output should look like, and what to send back if it differs. Keep the sequence explicit and do not ask them to invent troubleshooting suggestions.
+
+When an error occurs, take ownership of diagnosis: inspect the saved notebook output and repository code, explain the cause in plain language, choose a fix or a feasible alternative, implement and verify the change locally, push notebook/code updates to GitHub when Colab needs them, then give the user only the next action. If the first route is blocked by Colab limits, choose the next viable route (smaller model, smaller task, fewer tokens, CPU/GPU runtime change, or another benchmark) and update this plan before proceeding. Never present a failed/skipped condition as success. Preserve the resource-first rule after every runtime restart.
+
+For the current restarted Colab runtime, guide the user through these notebook sections in order:
+
+1. Connect to a Colab runtime and select a GPU runtime if available.
+2. Run the first code cell, which reports RAM, free disk, GPU name, and total/free GPU memory, then recommends the model tier. Stop if it reports an error or insufficient resources; explain the next route.
+3. Run **Download and install the project**.
+4. Run **Confirm the command is ready**.
+5. Run **Verify one record from the smaller Goldset benchmark**. Continue only if it reports one pass and zero failures/skips.
+6. Run the model-libraries installation cell.
+7. Run **Load the selected model and make one short request**. Continue only if a model revision and non-empty response are printed.
+8. Run **Run one Goldset task through the agent with and without retrieval**. Review both outputs and their run records; both conditions must complete before calling the paired pilot successful.
+
+Skip **Check one SWE-bench Lite task and Colab capacity**; that feasibility check is already complete and the official harness is not supported by the available runtime. After each step, inspect the output before directing the user to the next step. If runtime restarts, begin again at step 1.
+
+## 12. Approval gate
 
 This plan is pending the user's confirmation of the issue-driven scope and research direction. Implementation begins only after that confirmation.
