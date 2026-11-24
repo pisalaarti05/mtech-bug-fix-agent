@@ -209,19 +209,14 @@ The user is new to coding and needs explicit guidance at every stage. Never assu
 
 When an error occurs, take ownership of diagnosis: inspect the saved notebook output and repository code, explain the cause in plain language, choose a fix or a feasible alternative, implement and verify the change locally, push notebook/code updates to GitHub when Colab needs them, then give the user only the next action. If the first route is blocked by Colab limits, choose the next viable route (smaller model, smaller task, fewer tokens, CPU/GPU runtime change, or another benchmark) and update this plan before proceeding. Never present a failed/skipped condition as success. Preserve the resource-first rule after every runtime restart.
 
-For the current restarted Colab runtime, guide the user through these notebook sections in order:
+**Current checkpoint (2026-11-24):** the user completed the notebook's resource check, project install, Goldset verification, 7B model load, paired refinement run, and failure-inspection cell. The saved notebook is commit `48453fb`. The resource check reported a Tesla T4 with 14.46 GiB free VRAM and 112.54 GiB free disk; it selected Qwen2.5-Coder-7B-Instruct with 3072 input/768 output tokens. Model snapshot `c03e6d358207e414f1eca0bb1891e29f1db0e242` loaded successfully in 497 seconds and used 5.18 GiB after load. All three Goldset verification oracles passed.
 
-1. Connect to a Colab runtime and select a GPU runtime if available.
-2. Run the first code cell, which reports RAM, free disk, GPU name, and total/free GPU memory, then recommends the model tier. Stop if it reports an error or insufficient resources; explain the next route.
-3. Run **Download and install the project**.
-4. Run **Confirm the command is ready**.
-5. Run **Verify the three Goldset pilot records**. Continue only when each record reports one pass, zero failures, and zero skips; if any fails verification, stop and share that output so I can choose an alternate.
-6. Run the model-libraries installation cell.
-7. Run **Load the selected model and make one short request**. Continue only if a model revision and non-empty response are printed.
-8. Run **Run three Goldset tasks through the agent with and without retrieval**. This produces six runs (two conditions for each task). Review the per-task outputs and run records; a failed generated repair counts as a condition result, while a skipped/environment error does not count as scored.
+The refinement run produced six scored attempts: no retrieval passed 0/3 and retrieval passed 0/3; each condition failed 3/3 and skipped 0. For all six, the buggy revision failed and the reference fix passed, validating the test setup. Failing tests were `com2ann`: `src/test_com2ann.py::FunctionTestCase::test_invalid_return_type` in both conditions; `more-itertools`: `tests/test_more.py::LastTests::test_reversed_is_none` in both; and `textcase`: `tests/boundaries/test_boundary_from_delimiter.py::test_return_type_of_custom_subclass` in both. Retrieval selected only `setup.py` for `com2ann`, `more_itertools/recipes.py` and `more_itertools/__init__.py` for `more-itertools`, and no files for `textcase`. These three records have now been used for development and refinement and must stay out of final evaluation. Do not rerun this refinement round.
 
-Skip **Check one SWE-bench Lite task and Colab capacity**; that feasibility check is already complete and the official harness is not supported by the available runtime. After each step, inspect the output before directing the user to the next step. If runtime restarts, begin again at step 1.
+**Next project step:** complete Phase 4 by writing and freezing `research/protocol/experiment-protocol.md` and selecting fresh Goldset holdout records. Keep the same model, prompt, token budget, retrieval settings, and test protocol across both final conditions. The Nov. 3 baseline used a 3B model and the Nov. 24 refinement used a 7B model, so do not compare those rounds as if model size were held constant. No further Colab cell is needed until the holdout and protocol are ready. If the runtime restarts before a later run, begin with the resource check again.
+
+Skip **Check one SWE-bench Lite task and Colab capacity**; the official harness is not supported by the available runtime. After each future Colab step, inspect the output before directing the user to the next step.
 
 ## 12. Approval gate
 
-This plan is pending the user's confirmation of the issue-driven scope and research direction. Implementation begins only after that confirmation.
+The issue-driven project scope and Goldset feasibility direction have been confirmed in the conversation. Revisit scope only if the user asks to change it or the benchmark protocol proves infeasible.
